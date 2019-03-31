@@ -52,14 +52,14 @@ const actions = {
   },
 
   /**
-   * 删除文章
+   * 隐藏文章
    * @param state
    * @param commit
    * @param id
    * @return {Promise<void>}
    */
-  async deleteArticle({state, commit}, params) {
-    return await article.delete(params);
+  async hiddenArticle({state, commit}, params) {
+    return await article.hidden(params);
   },
 
   /**

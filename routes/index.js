@@ -3,6 +3,7 @@ const UserController = require('../controllers/user')
 const ArticleController = require('../controllers/article')
 const CategoryController = require('../controllers/category')
 const UploadTokenController = require('../controllers/upload')
+const CommentsController = require('../controllers/comments')
 
 const router = new Router({
     prefix: '/api/v1'
@@ -34,8 +35,8 @@ router.get('/upload/token', UploadTokenController.getUploadToken)
 router.post('/article/create', ArticleController.create);
 // 获取文章详情
 router.get('/article/detail/:id', ArticleController.detail);
-// 删除文章
-router.put('/article/delete/:id', ArticleController.delete);
+// 隐藏文章
+router.put('/article/hidden/:id', ArticleController.hidden);
 // 更改文章
 router.put('/article/update/:id', ArticleController.update);
 // 获取文章列表
@@ -58,5 +59,21 @@ router.put('/category/update/:id', CategoryController.update);
 router.get('/category/list', CategoryController.list);
 // 查询分类ID下的所有文章列表
 router.get('/category/article/:id', CategoryController.getCategoryArticle);
+/**
+
+
+ /* *
+ *评论
+ */
+// 创建评论
+router.post('/comments/create', CommentsController.create);
+// 获取评论详情
+router.get('/comments/detail/:id', CommentsController.detail);
+// 删除评论
+router.delete('/comments/hidden/:id', CommentsController.hidden);
+// 更改评论
+router.put('/comments/update/:id', CommentsController.update);
+// 获取评论列表
+router.get('/comments/list', CommentsController.list);
 
 module.exports = router

@@ -3,9 +3,12 @@ const Sequelize = db.sequelize;
 const Op = Sequelize.Op;
 const Article = Sequelize.import('../schema/article');
 const Category = Sequelize.import('../schema/category');
+const Comments = Sequelize.import('../schema/comments');
 
 Category.hasMany(Article); // 将会添加 category_id 到 Article 模型
+Article.hasMany(Article); // 将会添加 comments_id 到 Article 模型
 Article.belongsTo(Category, {foreignKey: 'categoryId'});
+Article.belongsTo(Comments, {foreignKey: 'commentsId'});
 
 Article.sync({force: false});
 
@@ -171,7 +174,10 @@ class ArticleModel {
             },
             include: [{
                 model: Category,
-                where: {categoryId: Sequelize.col('article.categoryId')}
+                where: [
+                    {categoryId: Sequelize.col('article.categoryId')},
+                    {commentsId: Sequelize.col('comments.commentsId')}
+                ]
             }],
             attributes: {exclude: ['is_del']}
         })
@@ -182,7 +188,7 @@ class ArticleModel {
      * @param id 文章ID
      * @param data 文章ID
      */
-    static async softDeleteArticle(id, data) {
+    static async hiddenArticle(id, data) {
         return await Article.update(data, {
             where: {
                 id,

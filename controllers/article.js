@@ -15,13 +15,14 @@ class articleController {
      */
     static async create(ctx) {
         // 接收参数
-        let {title, author, introduction, categoryId, tag, cover, content} = ctx.request.body;
+        let {title, author, introduction, categoryId, tag, cover, content, commentsId = 0} = ctx.request.body;
 
         let params = {
             title,
             author,
             introduction,
             categoryId,
+            commentsId,
             tag,
             cover,
             content
@@ -206,7 +207,7 @@ class articleController {
      * @param ctx is_del 是否软删除
      * @returns {Promise<boolean>}
      */
-    static async delete(ctx) {
+    static async hidden(ctx) {
         let {id} = ctx.params;
         let {is_del} = ctx.request.body;
 
@@ -233,7 +234,7 @@ class articleController {
         }
 
         try {
-            await ArticleModel.softDeleteArticle(id, {is_del});
+            await ArticleModel.hiddenArticle(id, {is_del});
 
             ctx.response.status = 200;
             ctx.body = {
@@ -306,7 +307,7 @@ class articleController {
 
             ctx.response.status = 200;
             ctx.body = {
-                code: 500,
+                code: 200,
                 message: `更新文章成功`,
                 data
             }

@@ -1,20 +1,20 @@
 const moment = require('moment');
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define('category', {
+    return sequelize.define('comments', {
         id: {
             type: DataTypes.INTEGER.UNSIGNED,
             primaryKey: true,
             allowNull: true,
             autoIncrement: true,
         },
-        // 分类名字
+        // 评论名字
         name: {
-            type: DataTypes.STRING(30),
+            type: DataTypes.STRING(50),
             field: 'name',
             allowNull: false
         },
         // 分类icon图标
-        icon: {
+        email: {
             type: DataTypes.STRING(100),
             field: 'icon',
             allowNull: false
@@ -25,12 +25,12 @@ module.exports = function (sequelize, DataTypes) {
             field: 'parent_id',
             allowNull: false
         },
-        // 权重
-        z_index: {
-            type: DataTypes.STRING(30),
-            field: 'z_index',
-            default: 1,
-            allowNull: false
+        // 是否软删除
+        is_del: {
+            type: DataTypes.BOOLEAN,
+            field: 'is_del',
+            allowNull: false,
+            defaultValue: false
         },
         createdAt: {
             type: DataTypes.DATE,
