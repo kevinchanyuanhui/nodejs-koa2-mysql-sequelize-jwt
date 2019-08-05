@@ -1,99 +1,138 @@
 <template>
-  <section class="header-wrap">
-
-    <header :class="headerFixed ? 'header header-fixed' : 'header'" id="header">
-      <section class="header-inner">
-        <div class="logo" @click="goHome"></div>
-        <div class="search" id="search">
-          <input type="text" v-model="keyword" @keyup.enter="search" placeholder="请输入您想要的.." class="search-input">
-          <button class="search-submit" @click="search">搜索</button>
-        </div>
-        <!--<div class="login-register">-->
-        <!--<button>登陆/注册</button>-->
-        <!--</div>-->
+  <section class="header">
+    <header class="header-box">
+      <section class="logo">
+        <a href="/"><img src="../assets/images/LOGO.png" alt="LOGO"></a>
       </section>
-    </header>
 
-    <nav class="nav" id="nav">
-      <ul class="nav-box">
-        <li class="nav-item" v-for="(item, index) in nav" @click="navActiveIndex = index" :key="index">
-          <router-link :class="{ 'active' : navActiveIndex === index }" :to="{path: item.path}">
-            {{ item.title }}
-          </router-link>
+      <ul class="nav-dropdown">
+        <li class="nav-item">
+          <el-dropdown trigger="click">
+                <span class="el-dropdown-link">
+                  首页<i class="el-icon-arrow-down el-icon--right"></i>
+                </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                v-for="(item, index) in nav"
+                :key="index"
+                @click.native="changeNav(item.path, index)">
+                <i :class="`icon ${item.icon}`"></i> {{item.name}}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </li>
       </ul>
-    </nav>
 
+      <div class="nav-list">
+        <ul class="nav-box">
+          <li v-for="(item, index) in nav"
+              :class="navIndex === index ? 'nav-item nav-item--active' : 'nav-item'"
+              @click="changeNav(item.path, index)"
+              :key="index">
+            <i :class="`icon ${item.icon}`"></i> {{item.name}}
+          </li>
+        </ul>
+      </div>
+
+      <div class="search">
+        <el-input
+          placeholder="请输入搜索内容"
+          size="small"
+          clearable
+          maxlength="32"
+          prefix-icon="el-icon-search"
+          @keyup.enter.native="getSearchArticle"
+          v-model="keyword">
+        </el-input>
+      </div>
+    </header>
   </section>
 </template>
 
 <script>
-  import {mapActions} from 'vuex'
+  import {mapState, mapActions} from 'vuex'
   import merge from 'webpack-merge'
 
   export default {
-    name: "Header",
     data() {
       return {
-        // 导航
+        keyword: '',
+        navIndex: 0,
         nav: [
-          {title: '技术文章', key: 'article', path: '/'},
-          // {title: '学习资源', key: 'source', path: '/source'},
-          // {title: '收藏域名', key: 'domain', path: '/domain'},
-          {title: '关于我', key: 'about', path: '/about'},
-        ],
-        // 导航高亮索引
-        navActiveIndex: 0,
-        // 是否固定头部
-        headerFixed: false,
-        keyword: ''
+          {name: '文章', path: '/', icon: 'el-icon-house'},
+          // {name: '专栏', path: '/book', icon: 'el-icon-reading\n'},
+          {name: '关于', path: '/about', icon: 'el-icon-chat-round'},
+        ]
       }
     },
     mounted() {
-      // 监听滚动条
-      window.addEventListener('scroll', this.handleScroll)
     },
-    destroyed() {
-      // 移除滚动条
-      window.removeEventListener('scroll', this.handleScroll)
+    computed: {
+      ...mapState({})
     },
     methods: {
       ...mapActions({
-        searchArticle: 'article/searchArticle'
+        searchArticle: 'article/searchArticle',
+        showUserManager: 'user/showUserManager',
+        getArticleList: 'article/getArticleList'
       }),
-      // 处理滚动条
-      handleScroll() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
-        let offsetTop = document.querySelector('#nav').offsetTop;
-        this.headerFixed = !!(scrollTop > offsetTop)
+
+      /**
+       * 切换导航栏
+       */
+      changeNav(path, index) {
+        this.$router.replace({
+          query: merge({})
+        });
+        this.navIndex = index;
+        this.toPath(path);
+        this.getArticle();
       },
+      /**
+       * 搜索文章
+       * @returns 文章列表
+       */
+      async getSearchArticle() {
+        const keyword = this.keyword;
+        if (!keyword) return false;
 
-      // 搜索
-      async search() {
-        if (this.$route.path !== '/') {
-          this.toPathLink('/?keyword=' + this.keyword);
-        }
+        const path = this.$route.path;
+        let articlePath = '/';
 
-        try {
-          // 动态改变路由订单状态参数orderStatus
-          this.$router.push({
-            query: merge(this.$route.query, {'keyword': this.keyword})
-          })
-          await this.searchArticle({
-            keyword: this.keyword
+        if (path !== articlePath) {
+          articlePath += `?keyword=${keyword}`;
+          this.toPath(articlePath)
+
+        } else {
+          this.$router.replace({
+            query: merge(this.$route.query, {
+              keyword
+            })
           });
-        } catch (e) {
-          console.log(e);
-
+          this.getArticle();
         }
       },
-      // 回到首页
-      goHome() {
-        window.location.href = "/"
+      /**
+       * 获取文章
+       *
+       * @returns 文章列表
+       */
+      async getArticle() {
+        const {page, desc, category_id, keyword} = this.$route.query;
+
+        await this.getArticleList({
+          page,
+          desc,
+          keyword,
+          category_id
+        });
       },
-      // 路由跳转
-      toPathLink(path) {
-        this.$router.push(path)
+      /**
+       * 路由调整
+       * @param path 路由地址
+       */
+      toPath(path) {
+        this.$router.push(path);
       }
     }
   }
@@ -101,168 +140,137 @@
 
 <style lang="scss" scoped>
   .header {
-    height: 150px;
     width: 100%;
+    height: 96px;
+    z-index: 5000;
     background: #fff;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, .03);
+    border-bottom: 1px solid #f0f0f0;
   }
 
-  .header-inner {
-    box-sizing: content-box;
-    max-width: 1264px;
-    height: 100%;
+  .header-box {
+    width: 70%;
+    box-sizing: border-box;
     margin: 0 auto;
-    padding: 0 32px;
+    height: 96px;
     display: flex;
     align-items: center;
   }
 
-  .header-fixed {
-    width: 100%;
-    height: 96px;
-    position: fixed;
-    z-index: 8888;
-    background: #fff;
-    border-bottom: 1px solid #dcdee2;
-    animation: showAnimate 0.36s both;
-  }
-
-  @keyframes showAnimate {
-    0% {
-      opacity: 0;
-      top: -128px;
-      filter: alpha(opacity=0);
-    }
-    25% {
-      top: -96px;
-      opacity: 0.25;
-      filter: alpha(opacity=30);
-    }
-
-    50% {
-      top: -64px;
-      opacity: 0.5;
-      filter: alpha(opacity=30);
-    }
-    75% {
-      top: -32px;
-      opacity: 0.75;
-      filter: alpha(opacity=30);
-    }
-    100% {
-      top: 0;
-      opacity: 1;
-      filter: alpha(opacity=100);
-    }
-  }
-
   .logo {
-    width: 220px;
-    height: 90px;
-    text-align: left;
-    cursor: pointer;
-    background: url("http://images.boblog.com/BOBLOG-03.png?imageView2/1/w/220/h/90") -24px 0 no-repeat;
-    background-size: 100% 100%;
+    width: 200px;
+    height: 96px;
+    margin-left: -20px;
+
+    & img {
+      width: 100%;
+    }
+  }
+
+  .nav-box-dropdown {
+    display: none;
+  }
+
+  .nav-list {
+    display: block;
+    margin: 0 24px;
+
+    & .nav-box {
+      display: flex;
+      height: 96px;
+      width: 100%;
+
+      & .nav-item {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-items: center;
+        padding: 0 24px;
+        height: 96px;
+        line-height: 96px;
+        color: #404040;
+        font-size: 20px;
+        text-decoration: none;
+
+        &:hover {
+          color: #409EFF;
+        }
+      }
+
+      & .icon {
+        margin-right: 8px;
+      }
+
+      & .nav-item--active {
+        color: #409EFF;
+      }
+    }
   }
 
   .search {
     position: relative;
-    flex: 1px;
-    /*margin-right: 48px;*/
+    width: 480px;
+
+    .search-icon {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      color: #aaa;
+    }
 
     & .search-input {
-      height: 48px;
-      width: 100%;
-      font-size: 18px;
       box-sizing: border-box;
-      padding: 0 112px 0 16px;
-      border: 3px solid #5cadff;
-    }
-
-    & .search-submit {
-      cursor: pointer;
-      position: absolute;
-      right: 0;
-      top: 0;
-      height: 100%;
-      width: 96px;
-      color: #fff;
-      border: none;
-      font-size: 18px;
-      background-image: linear-gradient(to right, #5cadff 0, #2d8cf0 100%);
-      background-repeat: repeat-x;
-
-      &:hover {
-        background-image: linear-gradient(to right, #2d8cf0 0, #2b85e4 100%);
-        background-repeat: repeat-x;
-      }
-    }
-  }
-
-  .login-register {
-    margin-left: 16px;
-
-    & button {
-      cursor: pointer;
-      width: 112px;
-      height: 48px;
-      line-height: 46px;
-      text-align: center;
+      color: #404040;
+      height: 36px;
+      line-height: 36px;
+      width: 360px;
       font-size: 16px;
-      color: #657180;
-      background-color: #fff;
-      border: 1px solid #657180;
-      transition: background-color 0.2s ease-in-out;
+      padding-right: 32px;
+      padding-left: 10px;
+      outline: none;
+      border: 1px solid #ccc;
 
-      &:hover {
-        color: #fff;
-        background-color: #2d8cf0;
-        border-color: #2d8cf0;
+      &:focus {
+        border-color: #409EFF;
+      }
+
+      &::placeholder {
+        color: #ccc;
+        font-size: 16px;
+      }
+
+      &:focus .search-icon {
+        color: #409EFF;
       }
     }
   }
 
-  .nav {
-    width: 100%;
-    background: #2f8cf0;
-    /*background-image: linear-gradient(to right, #5cadff 0, #2d8cf0 100%);*/
-    /*background-repeat: repeat-x;*/
-
-    & .nav-box {
-      box-sizing: content-box;
-      padding: 0 32px;
-      max-width: 1264px;
-      margin: 0 auto;
-      display: flex;
-      height: 64px;
-      align-items: center;
-    }
-
-    & .nav-item {
-      width: 220px;
-
-      & a {
-        display: block;
-        color: #fff;
-        font-size: 20px;
-        font-weight: 400;
-        text-decoration: none;
-
-        &.active {
-          text-decoration: underline;
-        }
-
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-    }
+  .nav-dropdown {
+    display: none;
   }
 
-  @media screen and (min-width: 200px) and (max-width: 750px) {
-    .nav {
-      & .nav-item {
-        width: 150px;
-      }
+  @media screen and (min-width: 200px) and (max-width: 768px) {
+
+    .header {
+      box-sizing: border-box;
+      padding: 0 16px;
+    }
+    .header-box {
+      width: 100%;
+    }
+    .nav-dropdown {
+      display: block;
+      margin: 0 16px;
+    }
+
+    .nav-list {
+      display: none;
+      margin: 0 16px;
+    }
+
+    .search {
+      width: auto;
+      flex: 1;
     }
   }
 </style>

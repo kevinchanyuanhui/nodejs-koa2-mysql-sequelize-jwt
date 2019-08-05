@@ -2,18 +2,20 @@ import axios from 'axios';
 
 let util = {};
 
-const ajaxUrl = process.env.NODE_ENV === 'development'
-  // 测试环境api接口
-  ? 'http://localhost:3000/api/v1'
-  // 线上环境api接口
-  : 'http://api.boblog.com/api/v1';
+util.title = function (title) {
+  title = title ? title + ' - boblog.com ' : 'boblog.com 后台';
+  window.document.title = title;
+};
+
+const ajaxUrl = process.env.NODE_ENV === 'development' ?
+  'http://localhost:3000/v1' :
+  'http://api.boblog.com/v1';
+
+util.ajax_url = ajaxUrl;
 
 util.ajax = axios.create({
   baseURL: ajaxUrl,
   timeout: 30000
 });
-
-util.api = ajaxUrl;
-util.oauthUrl = ajaxUrl;
 
 export default util;

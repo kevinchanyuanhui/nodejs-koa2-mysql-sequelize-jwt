@@ -8,26 +8,25 @@ const state = {
 
 const mutations = {
   // 设置分类列表
-  SET_CATEGORY_LIST(state, data) {
-    state.categoryList = data
+  SET_CATEGORY_LIST(state, list) {
+    state.categoryList = list
   }
 };
 
 const actions = {
 
   /**
-   * 获取文章列表
+   * 获取分类列表
    * @param state
    * @param commit
    * @param params
    * @returns {Promise<void>}
    */
   async getCategoryList({state, commit}, params) {
-    let ret = await category.list(params);
+    let res = await category.list(params);
+    commit('SET_CATEGORY_LIST', res.data.data);
 
-    commit('SET_CATEGORY_LIST', ret);
-
-    return ret;
+    return res;
   },
 
   /**
@@ -37,8 +36,8 @@ const actions = {
    * @param params
    * @returns {Promise<void>}
    */
-  async getCategoryArticle({state, commit}, params) {
-    return  await category.article(params);
+  async getCategoryArticle({state, commit}, id) {
+    return await category.article(id);
 
   }
 };

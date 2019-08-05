@@ -1,236 +1,147 @@
 <template>
-  <!--list-->
-  <!--@author: 梁凤波-->
-  <!--@date  2018/11/22 22:16-->
-  <section class="list-wrap">
-    <div class="list" v-if="list.length > 0">
-      <Table border :columns="columns" :data="list"></Table>
-      <div class="page">
-        <pagination :page="page" @on-change="fetchData"></pagination>
-      </div>
+  <section>
+    <section v-if="list.length > 0">
+      <Table border :columns="columns" :data="list">
+        <template slot-scope="{ row }" slot="name">
+          <strong>{{ row.name }}</strong>
+        </template>
+        <template slot-scope="{ row, index }" slot="action">
+          <Button type="primary" size="small" style="margin-right: 5px" @click="update(row.id)">编辑</Button>
+          <Button type="error" size="small" @click="destroy(row.id)">删除</Button>
+        </template>
+      </Table>
 
-    </div>
-    <div class="model">
-      <Modal
-        v-model="showModel"
-        title="提示"
-        @on-ok="remove(id)">
-        <p>{{tipsText}}</p>
-      </Modal>
-    </div>
+      <section class="page">
+        <Page :total="page.total" :page-size="page.per_page" :current="page.current_page" show-total
+              @on-change="handlePage"></Page>
+      </section>
+
+    </section>
   </section>
 </template>
 
 <script>
+  import merge from 'webpack-merge'
   import {mapState, mapActions} from 'vuex';
-  import pagination from '../../components/pagination'
 
   export default {
-    components: {
-      pagination
-    },
+    name: "list",
     data() {
       return {
-        // 文章ID
-        id: '',
-        showModel: false,
-        tipsText: '',
-        // 是否软删除
-        is_del: 0,
         list: [],
-        page: null,
-        pagination: '',
+        page: {},
+        currentPage: 1,
         columns: [
           {
             title: 'ID',
             key: 'id',
-            width: 50,
-            align: 'center'
-          },
-
-          {
-            title: '文章封面',
-            key: 'cover',
-            width: 110,
-            render: (h, params) => {
-              return h('div', {
-                  style: {
-                    padding: "10px 0px"
-                  }
-                }, [
-                  h('img', {
-                      attrs: {
-                        src: `${params.row.cover}?imageView2/1/w/150/h/150`
-                      },
-                      style: {
-                        width: '75px',
-                      }
-                    }
-                  ),
-                  h('h2', params.row.name),
-                ]
-              );
-            }
+            width: 80,
+            align: "center"
           },
           {
             title: '文章标题',
-            key: 'title',
-            render: (h, params) => {
-              return h('div', [
-                h('div', {
-                  props: {
-                    type: 'success',
-                    size: 'small'
-                  },
-                  style: {
-                    fontWeight: 800,
-                    fontSize: 20,
-                    color: "#000"
-                  },
-                }, params.row.title)
-              ]);
-            }
+            key: 'title'
           },
           {
-            title: '标签',
-            key: 'tag',
-            width: 120
-          },
-          {
-            title: '分类',
-            key: 'category',
-            width: 120,
+            title: '评论次数',
             align: 'center',
-            render: (h, params) => {
-              return h('div', [
-                h('Button', {
-                  props: {
-                    type: 'warning',
-                    size: 'small'
-                  },
-                }, params.row.category.name)
-              ]);
-            }
+            key: 'comments_nums',
+            width: 100
           },
-
           {
-            title: '是否被删除',
-            key: "is_del",
+            title: '浏览次数',
             width: 100,
             align: 'center',
-            render: (h, params) => {
-              return h('div', [
-                h('Button', {
-                  props: {
-                    type: params.row.is_del ? 'error' : 'success',
-                    size: 'small'
-                  },
-                }, params.row.is_del ? '已被隐藏' : '正常显示中')
-              ]);
-            }
+            key: 'browse'
           },
           {
-            title: '浏览',
-            key: "browser",
-            width: 80,
-            align: 'center'
-          },
-          {
-            title: '操作',
-            key: 'action',
-            width: 150,
+            title: '分类ID',
+            width: 100,
             align: 'center',
-            render: (h, params) => {
-              return h('div', [
-                h('Button', {
-                  props: {
-                    type: 'primary',
-                    size: 'small',
-                    disabled: params.row.is_del
-                  },
-                  style: {
-                    marginRight: '5px'
-                  },
-                  on: {
-                    click: () => {
-                      this.update(params.row.id);
-                    }
-                  }
-                }, '修改'),
-                h('Button', {
-                  props: {
-                    type: params.row.is_del ? 'warning' : 'error',
-                    size: 'small'
-                  },
-                  on: {
-                    click: () => {
-                      this.id = params.row.id;
-                      this.showModel = true;
-                      this.tipsText = params.row.is_del ? '确定恢复文章吗' : '确定隐藏文章吗'
-                      this.is_del = params.row.is_del ? 0 : 1
-                    }
-                  }
-                }, params.row.is_del ? '恢复文章' : '隐藏文章')
-              ]);
-            }
+            key: 'category_id'
+          },
+          {
+            title: '创建时间',
+            width: 150,
+            key: 'created_at',
+            align: "center"
+          },
+          {
+            title: 'Action',
+            slot: 'action',
+            width: 150,
+            align: 'center'
           }
-        ],
+        ]
       }
     },
-    computed: {
-      ...mapState({})
-    },
     created() {
-      this.fetchData()
+      this._getArticleList();
     },
     methods: {
       ...mapActions({
-        articleList: 'article/articleList',
-        hiddenArticle: 'article/hiddenArticle'
+        getArticleList: 'article/getArticleList',
+        destroyArticle: 'article/destroyArticle'
       }),
-      // 获取用户列表
-      async fetchData(page) {
-        try {
-          this.pagination = page;
-          const ret = await this.articleList({
-            include: 'is_del',
+      // 获取文章
+      async _getArticleList() {
+        // let {page, desc, category_id, keyword} = this.$route.query;
+
+        const res = await this.getArticleList({
+          page: this.currentPage
+        });
+
+        this.list = res.data.data.data;
+        this.page = res.data.data.meta;
+      },
+      // 切换分页
+      handlePage(page) {
+        this.$router.replace({
+          query: merge(this.$route.query, {
             page
-          });
-          this.page = ret.meta;
-          this.$Message.success('获取文章列表成功');
-          this.list = ret.data;
-        } catch (e) {
-          this.$Message.error('获取文章列表失败');
-
-        }
+          })
+        });
+        this.currentPage = page;
+        this._getArticleList();
       },
-      // 更新文章
-      async update(id) {
-        this.$router.push("/article/update/" + id);
+      // 更新
+      update(id) {
+        this.$router.push(`/article/update/${id}`);
       },
+      // 删除分类
+      destroy(id) {
+        this.$Modal.confirm({
+          title: '提示',
+          content: '<p>确定删除此文章吗？</p>',
+          loading: true,
+          onOk: async () => {
+            try {
+              await this.destroyArticle(id);
+              this.$Message.success('删除成功');
 
-      // 移除文章
-      async remove(id) {
-        try {
-          await this.hiddenArticle({
-            id,
-            is_del: this.is_del
-          });
-          this.$Message.success('删除文章成功');
-          this.fetchData(this.pagination);
+              this._getArticleList();
 
-        } catch (e) {
-          console.log(e);
-          this.$Message.error('删除文章失败');
-        }
+            } catch (e) {
+              console.log(e)
+              this.$Message.error(e);
+
+            } finally {
+              this.$Modal.remove();
+            }
+
+          },
+          onCancel: () => {
+            this.$Message.warning('取消！');
+          }
+        });
       }
     }
   }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
   .page {
-    text-align: center;
     padding: 32px 0;
+    text-align: center;
   }
 </style>

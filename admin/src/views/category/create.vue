@@ -1,97 +1,68 @@
 <template>
-  <Form ref="category" :model="category" :rules="ruleValidate">
-    <FormItem label="分类名称" prop="name">
-      <Input v-model="category.name" placeholder="category name"></Input>
-    </FormItem>
-    <FormItem label="分类icon图标" prop="name">
-      <upload-images @completeUpload="completeUpload"/>
-      <div v-if="upload">
-        <img :src="upload.url" alt="img">
-      </div>
-    </FormItem>
-    <FormItem label="父级分类" prop="category">
-      <Select
-        v-if="categoryList.length > 0"
-        v-model="category.parent_id"
-        placeholder="Select category"
-        style="position:relative;z-index: 9999">
-        <Option
-          v-for="(cate, key) in categoryList"
-          :key="key"
-          :value="cate.id">
-          {{cate.name}}
-        </Option>
-      </Select>
-    </FormItem>
-    <FormItem label="层级" prop="name">
-      <Input v-model="category.z_index" placeholder="层级"></Input>
-    </FormItem>
-    <FormItem>
-      <Button @click="handleReset('category')">重置</Button>
-      <Button type="primary" style="margin-left: 8px" @click="handleSubmit('category')">创建</Button>
-    </FormItem>
-  </Form>
+  <section>
+    <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="100">
+      <FormItem label="分类名称" prop="name">
+        <Input v-model="formValidate.name" placeholder="分类名称"></Input>
+      </FormItem>
+      <FormItem label="分类关键字" prop="key">
+        <Input v-model="formValidate.key" placeholder="分类关键字"></Input>
+      </FormItem>
+      <FormItem>
+        <Button @click="handleReset('formValidate')">重置</Button>
+        <Button type="primary" @click="handleSubmit('formValidate')" style="margin-left: 8px">提交</Button>
+      </FormItem>
+    </Form>
+  </section>
 </template>
 <script>
-  import {mapState, mapActions} from 'vuex'
-  import UploadImages from '../../components/UploadImages'
+  import {mapActions} from 'vuex';
 
   export default {
-    components: {
-      UploadImages
-    },
-    computed: {
-      ...mapState({
-        categoryList: state => state.category.categoryList
-      })
-    },
     data() {
       return {
-        upload: {},
-        category: {
+        id: this.$route.params.id,
+        detail: null,
+        formValidate: {
           name: '',
-          icon: '',
-          parent_id: 0,
-          z_index: 10
+          key: ''
         },
         ruleValidate: {
           name: [
-            {required: true, message: 'The name cannot be empty', trigger: 'blur'}
+            {required: true, message: '分类名称不能为空', trigger: 'blur'}
+          ],
+          key: [
+            {required: true, message: '分类关键字不能为空', trigger: 'blur'}
           ]
         }
       }
     },
     created() {
-      this.getCategoryList();
     },
     methods: {
       ...mapActions({
-        createCategory: 'category/createCategory',
-        getCategoryList: 'category/getCategoryList'
+        createCategory: 'category/createCategory'
       }),
+      // 创建
+      async _createCategory() {
+        this.formValidate.id = this.id;
 
-      // 上传图片成功回调
-      completeUpload(data) {
-        this.upload = data;
-        this.category.icon = data.url;
+        try {
+          await this.createCategory(this.formValidate);
+          this.$Message.success('创建成功!');
+          this.$router.push('/category');
+
+        } catch (e) {
+
+        }
       },
-
       // 提交
       handleSubmit(name) {
-        this.$refs[name].validate(async (valid) => {
+        this.$refs[name].validate((valid) => {
           if (valid) {
-            try {
-              await this.createCategory(this.category);
-              this.$Message.success('创建分类成功');
-              // window.location.href = "/category/list";
-              this.handleReset('category');
+            this._createCategory();
 
-            } catch (e) {
-              this.$Message.error(e)
-
-            }
           } else {
-            this.$Message.error('Empty Fail!');
+            this.$Message.error('请完成表单!');
           }
         })
       },

@@ -1,138 +1,89 @@
 import Util from '../libs/util'
 import qs from 'qs'
 import Vue from 'vue'
-import store from '../store/index'
+import store from '../vuex'
+import {Base64} from 'js-base64'
+import * as types from '../vuex/mutation-types'
 
 Util.ajax.defaults.headers.common = {
   'X-Requested-With': 'XMLHttpRequest'
-};
+}
 
 Util.ajax.interceptors.request.use(config => {
-  /**
-   * 在这里做loading ...
-   * @type {string}
-   */
-  if (config.isLoading) {
-    // 开启loading
-    store.dispatch('loading/openLoading')
-  }
-
-  // 获取token
-  config.headers.common['Authorization'] = 'Bearer ' + Vue.ls.get("BOBLOG_ADMIN_TOKEN");
+  config.headers['Authorization'] = _encode();
   return config
 
 }, error => {
   return Promise.reject(error)
 
-});
+})
 
 Util.ajax.interceptors.response.use(response => {
 
-  /**
-   * 在这里做loading 关闭
-   */
-
-    // 如果后端有新的token则重新缓存
-  let newToken = response.headers['new-token'];
-
-  if (newToken) {
-    Vue.ls.set("web-token", newToken);
-  }
-  // 关闭loading
-  closeLoading()
-
-  return response;
+  return response
 
 }, error => {
-  let res = error.response;
-  let {code} = res.data;
+  console.log(error)
+  let {response = {}} = error
 
-  switch (code) {
-    case 401:
-      // 处理401错误
-      alert("权限不足");
-      Vue.ls.remove('BOBLOG_ADMIN_TOKEN');
-      window.location.href = '/login';
-      break;
+  if (response.status === 401) {
+    // 登录鉴权失败
+    Vue.prototype.$Message.error('登录鉴权失败');
+    Vue.ls.remove("token");
+    location.href = "/login";
 
-    case 404:
-      alert("404不存在");
-      break;
+  } else if (response.status === 403) {
+    Vue.prototype.$Message.error('Token无效，请重新登录！');
+    Vue.ls.remove("token");
+    location.href = "/login";
 
-    case 412:
-      alert(res.data.message)
-      break;
+  } else if (response.status === 400) {
+    Vue.prototype.$Message.error(response.data.msg.join(','))
 
-    case 422:
-      let errors = "";
-      if (res.data.errors) {
-        let arr = [];
-        for (let key in res.data.errors) {
-          res.data.errors[key].forEach((item) => {
-            arr.push(item)
-          })
-        }
-        errors = arr.length > 0 ? arr.join('，') : arr;
-      }
-      alert(errors)
-      break;
-
-    case 500:
-      alert(res.data.message)
-      break;
-
-    default:
-      alert(res.data.message)
+  } else {
+    Vue.prototype.$Message.error(response.data.msg)
   }
 
-  // 关闭loading
-  closeLoading()
-  return Promise.reject(res)
+  store.commit(types.SET_MAIN_LOADING, false);
 
-});
+  return Promise.reject(response)
+
+})
 
 export default {
-  post(url, params = {}) {
-    let {isLoading = true} = params;
+  post(url, data) {
     return Util.ajax({
       method: 'post',
       url: url,
-      data: qs.stringify(params),
+      data: qs.stringify(data),
       timeout: 30000,
-      isLoading,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       }
     })
   },
 
-  get(url, params = {}) {
-    let {isLoading = true} = params;
+  get(url, params) {
     return Util.ajax({
       method: 'get',
       url: url,
-      params,
-      isLoading
+      params
     })
   },
 
-  delete(url, params = {}) {
-    let {isLoading = true} = params;
+  delete(url, params) {
     return Util.ajax({
       method: 'delete',
       url: url,
-      params,
-      isLoading
+      params
     })
   },
 
-  put(url, params = {}) {
-    let {isLoading = true} = params;
+  put(url, data) {
     return Util.ajax({
       method: 'put',
       url: url,
-      data: qs.stringify(params),
-      isLoading,
+      data: qs.stringify(data),
       timeout: 30000,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -141,13 +92,9 @@ export default {
   }
 }
 
-/**
- * 关闭loading
- */
-function closeLoading() {
-  // 延迟100毫秒关闭
-  setTimeout(() => {
-    // 关闭loading
-    store.dispatch('loading/closeLoading')
-  }, 100)
+// 转码token
+function _encode() {
+  const token = Vue.ls.get("token");
+  const base64 = Base64.encode(token + ':');
+  return 'Basic ' + base64
 }

@@ -1,19 +1,20 @@
 <template>
-  <!--list-->
-  <!--@author: 梁凤波-->
-  <!--@date  2018/11/22 22:16-->
-  <section class="list-wrap">
-    <div class="list" v-if="list.length > 0">
-      <Table border :columns="columns" :data="list"></Table>
-    </div>
-    <div class="model">
-      <Modal
-        v-model="showModel"
-        title="提示"
-        @on-ok="remove(id)">
-        <p>确定删除分类吗</p>
-      </Modal>
-    </div>
+  <section>
+    <Button type="primary" @click="toPathLink('/category/create')" icon="md-add" style="margin-bottom: 16px;">新增分类
+    </Button>
+
+    <section v-if="list.length > 0">
+      <Table border :columns="columns" :data="list">
+        <template slot-scope="{ row }" slot="name">
+          <strong>{{ row.name }}</strong>
+        </template>
+        <template slot-scope="{ row, index }" slot="action">
+          <Button type="primary" size="small" style="margin-right: 5px" @click="update(row.id)">编辑</Button>
+          <Button type="error" size="small" @click="destroy(row.id)">删除</Button>
+        </template>
+      </Table>
+    </section>
+
   </section>
 </template>
 
@@ -21,111 +22,90 @@
   import {mapState, mapActions} from 'vuex';
 
   export default {
+    name: "list",
     data() {
       return {
-        // 文章ID
-        id: '',
-        showModel: false,
         list: [],
+        page: null,
         columns: [
           {
             title: 'ID',
             key: 'id',
             width: 80,
-            align: 'center'
+            align: "center"
           },
           {
             title: '分类名称',
             key: 'name'
           },
           {
-            title: '父分类',
-            key: 'parent_id'
+            title: '分类关键字',
+            key: 'key'
           },
           {
-            title: '层级',
-            key: 'z_index'
+            title: '分类下的文章数',
+            key: 'article_nums'
           },
           {
-            title: '操作',
-            key: 'action',
+            title: 'Action',
+            slot: 'action',
             width: 150,
-            align: 'center',
-            render: (h, params) => {
-              return h('div', [
-                h('Button', {
-                  props: {
-                    type: 'primary',
-                    size: 'small'
-                  },
-                  style: {
-                    marginRight: '5px'
-                  },
-                  on: {
-                    click: () => {
-                      this.update(params.row.id);
-                    }
-                  }
-                }, '修改'),
-                h('Button', {
-                  props: {
-                    type: 'error',
-                    size: 'small'
-                  },
-                  on: {
-                    click: () => {
-                      this.id = params.row.id;
-                      this.showModel = true;
-                    }
-                  }
-                }, '删除')
-              ]);
-            }
+            align: 'center'
           }
-        ],
+        ]
       }
     },
-    computed: {
-      ...mapState({})
-    },
     created() {
-      this.getCategory()
+      this._getCategoryList();
     },
     methods: {
       ...mapActions({
         getCategoryList: 'category/getCategoryList',
-        deleteCategory: 'category/deleteCategory'
+        destroyCategory: 'category/destroyCategory'
       }),
-      // 获取用户列表
-      async getCategory() {
-        try {
-          this.list = await this.getCategoryList();
-          this.$Message.success('获取分类成功！');
-
-        } catch (e) {
-          this.$Message.error('获取分类失败！');
-        }
+      // 获取分类
+      async _getCategoryList() {
+        const res = await this.getCategoryList();
+        this.list = res.data.data;
       },
-      // 更新分类
-      async update(id) {
-        this.$router.push("/category/update/" + id);
+      // 路由跳转
+      toPathLink(path) {
+        this.$router.push(path)
       },
+      // 更新
+      update(id) {
+        this.$router.push(`/category/update/${id}`);
+      },
+      // 删除分类
+      destroy(id) {
+        this.$Modal.confirm({
+          title: '提示',
+          content: '<p>确定删除此分类吗？</p>',
+          loading: true,
+          onOk: async () => {
+            try {
+              await this.destroyCategory(id);
+              this.$Message.success('删除成功');
 
-      // 移除分类
-      async remove(id) {
-        try {
-          await this.deleteCategory(id);
-          this.$Message.success('删除分类成功');
-          this.getCategory();
+              this._getCategoryList();
 
-        } catch (e) {
-          this.$Message.error(e.data.message);
-        }
+            } catch (e) {
+              this.$Message.error(e);
+
+            } finally {
+              this.$Modal.remove();
+            }
+
+          },
+          onCancel: () => {
+            this.$Message.warning('取消！');
+          }
+        });
       }
     }
   }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 
 </style>

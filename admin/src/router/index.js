@@ -1,134 +1,102 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-
-Vue.use(Router)
-
-export default new Router({
-  // 哈斯
-  mode: 'history',
-  scrollBehavior(to, from, savedPosition) {
-    // 兼容
-    if (savedPosition) {
-      return savedPosition
-    } else {
-      return {x: 0, y: 0}
-    }
-  },
-  routes: [
-    {
-      // 首页
-      path: '/',
-      component(resolve) {
-        require(['../views/main/app.vue'], resolve);
-      },
-      children: [
-        {
-          // 管理员列表
-          path: 'user/lock',
-          name: 'userList',
-          meta: {
-            name: '权限分配',
-            icon: 'md-lock'
-          },
-          component(resolve) {
-            require(['../views/user/lock.vue'], resolve);
-          }
-        },
-        {
-          // 管理员信息
-          path: 'user/index',
-          name: 'userIndex',
-          meta: {
-            name: '首页',
-            icon: 'md-list'
-          },
-          component(resolve) {
-            require(['../views/user/index.vue'], resolve);
-          }
-        },
-        {
-          // 文章列表
-          path: 'article/list',
-          name: 'articleList',
-          meta: {
-            name: '文章列表',
-            icon: 'md-list'
-          },
-          component(resolve) {
-            require(['../views/article/list.vue'], resolve);
-          },
-        },
-        {
-          // 新增文章
-          path: 'article/create',
-          name: 'articleCreate',
-          meta: {
-            name: '新增文章',
-            icon: 'md-add'
-          },
-          component(resolve) {
-            require(['../views/article/create.vue'], resolve);
-          }
-        },
-        {
-          // 更新文章
-          path: 'article/update/:id',
-          name: 'articleCreate',
-          meta: {
-            name: '更新文章',
-            icon: 'md-book'
-          },
-          component(resolve) {
-            require(['../views/article/update.vue'], resolve);
-          }
-        },
-        {
-          // 分类列表
-          path: 'category/list',
-          name: 'categoryList',
-          meta: {
-            name: '分类列表',
-            icon: 'md-list'
-          },
-          component(resolve) {
-            require(['../views/category/list.vue'], resolve);
-          }
-        },
-        {
-          // 新增分类
-          path: 'category/create',
-          name: 'categoryCreate',
-          meta: {
-            name: '新增分类',
-            icon: 'md-add'
-          },
-          component(resolve) {
-            require(['../views/category/create.vue'], resolve);
-          }
-        },
-        {
-          // 新增分类
-          path: 'category/update/:id',
-          name: 'categoryUpdate',
-          meta: {
-            name: '更新分类',
-            icon: 'md-book'
-          },
-          component(resolve) {
-            require(['../views/category/update.vue'], resolve);
-          }
-        }
-      ]
+const routers = [
+  {
+    path: '/login',
+    meta: {
+      title: "登录",
+      noAuth: true
     },
-    {
-      path: '/login',
-      name: 'Login',
-      meta: {
-        inLoginPage: true
+    component: (resolve) => require(['../views/login.vue'], resolve),
+  },
+  {
+    path: '/',
+    component(resolve) {
+      require(['../views/layout.vue'], resolve);
+    },
+    children: [
+      {
+        //todo: 首页
+        path: '/',
+        name: 'index',
+        meta: {module: "/", title: '首页'},
+        component(resolve) {
+          require(['../views/index.vue'], resolve);
+        }
       },
-      component(resolve) {
-        require(['../views/user/login.vue'], resolve);
+
+      //todo: 管理员
+      {
+        path: 'admin',
+        name: 'admin',
+        meta: {module: "/admin", group: "set", title: '管理员 - 列表'},
+        component: (resolve) => require(['../views/admin/index.vue'], resolve),
+      },
+
+
+      //todo: 分类管理
+      {
+        path: 'category',
+        name: 'category',
+        meta: {module: "/category", group: "category", title: '分类 - 列表'},
+        component: (resolve) => require(['../views/category/list.vue'], resolve),
+      },
+      {
+        path: 'category/create',
+        name: 'category/create',
+        meta: {module: "/category/create", group: "category", title: '分类 - 创建'},
+        component: (resolve) => require(['../views/category/create.vue'], resolve),
+      },
+      {
+        path: 'category/update/:id',
+        name: 'category/update',
+        meta: {edit: true, module: "/category", group: "category", title: '分类 - 更新'},
+        component: (resolve) => require(['../views/category/update.vue'], resolve),
+      },
+      //todo: 文章管理
+      {
+        path: 'article',
+        name: 'article',
+        meta: {module: "/article", group: "article", title: '文章 - 列表'},
+        component: (resolve) => require(['../views/article/list.vue'], resolve),
+      },
+      {
+        path: 'article/create',
+        name: 'article/create',
+        meta: {module: "/article/create", group: "article", title: '文章 - 创建'},
+        component: (resolve) => require(['../views/article/create.vue'], resolve),
+      },
+      {
+        path: 'article/update/:id',
+        name: 'article/update',
+        meta: {edit: true, module: "/article", group: "article", title: '文章 - 更新'},
+        component: (resolve) => require(['../views/article/update.vue'], resolve),
+      },
+      //todo: 评论管理
+      {
+        path: 'comments',
+        name: 'comments',
+        meta: {module: "/comments", group: "comments", title: '评论 - 列表'},
+        component: (resolve) => require(['../views/comments/list.vue'], resolve),
+      },
+      {
+        //todo: 404
+        path: '/403',
+        name: '403',
+        meta: {module: "/", title: '403 - 权限不足'},
+        component(resolve) {
+          require(['../views/403.vue'], resolve);
+        }
+      },
+      {
+        //todo: 404
+        path: '*',
+        name: '404',
+        meta: {module: "/", title: '404 - 页面不存在'},
+        component(resolve) {
+          require(['../views/404.vue'], resolve);
+        }
       }
-    }
-  ]
-})
+    ]
+  }
+];
+
+export default routers;

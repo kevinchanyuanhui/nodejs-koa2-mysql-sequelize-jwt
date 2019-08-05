@@ -1,148 +1,95 @@
 <template>
-  <section id="article">
-    <section class="container" v-if="detail">
+  <section class="container" v-if="detail">
+    <section class="content">
+      <h1 class="article-title">{{detail.title}}</h1>
 
-      <section :class="contentClass">
-        <h1 class="article-title">{{detail.title}}</h1>
+      <div class="article-info">
+        <p class="article-category" v-if="detail.category_detail">
+          {{detail.category_detail.name}}
+        </p>
+        <p class="article-author"><i class="icon el-icon-user"></i> {{detail.author}}</p>
+        <p class="article-browse"><i class="icon el-icon-view"></i> {{detail.browse}}</p>
+        <p class="article-browse"><i class="icon el-icon-chat-dot-round"></i> {{detail.comments_list.data.length}}</p>
+        <p class="article-create-at"><i class="icon el-icon-time"></i> {{detail.created_at}}</p>
+      </div>
 
-        <div class="article-info">
-          <span class="article-category">{{detail.category.name}}</span>
-          <span class="article-tag">{{detail.tag}}</span>
-          <span class="article-browse">阅读：{{detail.browser}}次</span>
-          <span class="article-author">{{detail.author}}</span>
-          <span class="article-author">{{detail.createdAt}}</span>
-        </div>
+      <div class="article-detail" id="article-detail">
+        <mavon-editor
+          style="height: 100%"
+          :ishljs="true"
+          v-model="detail.content"
+          :defaultOpen="'preview'"
+          :editable="false"
+          :subfield="false"
+          :toolbarsFlag="false">
+        </mavon-editor>
+      </div>
 
-        <div class="article-detail" id="article-detail">
-          <mavon-editor
-            style="height: 100%"
-            :ishljs="true"
-            codeStyle="vs2015"
-            v-model="detail.content"
-            :defaultOpen="'preview'"
-            :editable="false"
-            :subfield="false"
-            :toolbarsFlag="false">
-          </mavon-editor>
-        </div>
-
-        <section class="article-comments">
-          <h1 class="comments-title">评论：</h1>
-          <article class="comments-inner">
-            <div class="user-info">
-              <p class="user-info-item">
-                <label for="username">姓名：</label>
-                <input type="text" id="username" placeholder="姓名">
-              </p>
-              <p class="user-info-item">
-                <label for="email">邮箱：</label>
-                <input type="email" id="email" placeholder="邮箱">
-              </p>
-            </div>
-            <div class="comments-content">
-              <p class="comments-content-title">评论内容：</p>
-              <textarea name="comments" id="comments" cols="30" rows="10" placeholder="评论内容.."></textarea>
-            </div>
-            <button class="submit-comments">提交评论</button>
-          </article>
-        </section>
-
-      </section>
-
-      <article :class="sidebarClass">
-        <div class="recommend">
-          <h1 class="recommend-title">
-            相关推荐
-            <img src="../../assets/recommend8.png" alt="recommend">
-          </h1>
-          <ul class="recommend-inner" v-if="recommend.length > 0">
-            <li class="recommend-item">
-              <h1 v-for="(item, index) in recommend.slice(0, 5)" @click="_getArticleDetail(item.id)" :key="index">
-                {{item.title}}
-              </h1>
-            </li>
-          </ul>
-          <ul class="recommend-empty" v-else>暂无推荐</ul>
-        </div>
-      </article>
-
+      <div class="v-comments">
+        <v-comments
+          :commentsList=detail.comments_list
+          @changeCommentsPage="changeCommentsPage"
+          @updateComments="updateComments"
+          :id="id">
+        </v-comments>
+      </div>
     </section>
   </section>
 </template>
 <script>
   import {mapState, mapActions} from 'vuex'
+  import VComments from '../../components/Comments'
 
   export default {
-    components: {},
+    components: {
+      VComments
+    },
     data() {
       return {
-        // 是否侧边栏
-        sidebarFixed: false,
         // 文章ID
         id: this.$route.params.id,
         // 文章详情
-        detail: null,
-        // 推荐列表
-        recommend: []
-      }
-    },
-    computed: {
-      // 内容样式
-      contentClass() {
-        return this.sidebarFixed ? 'content margin-right-300' : 'content'
-      },
-      // 侧边栏样式
-      sidebarClass() {
-        return this.sidebarFixed ? 'sidebar sidebar-fixed' : 'sidebar'
+        detail: null
       }
     },
     created() {
-      this._getArticleDetail();
+      if (!this.id) {
+        this.$router.push('/article');
+      } else {
+        this.getArticle();
+      }
     },
-    mounted() {
-      // 监听滚动条
-      window.addEventListener('scroll', this.handleScroll)
-    },
-    destroyed() {
-      // 移除滚动条
-      window.removeEventListener('scroll', this.handleScroll)
-    },
+
     methods: {
       ...mapActions({
         getArticleDetail: 'article/getArticleDetail',
-        getCategoryArticle: 'category/getCategoryArticle'
+        getCommentsList: 'comments/getCommentsList',
+        createComments: 'comments/createComments'
       }),
-      // 获取文章详情
-      async _getArticleDetail() {
-        let ret = await this.getArticleDetail(this.id);
-        this.detail = ret.data.data;
 
-        // 获取分类列表
-        this._getCategoryArticle({
-          id: this.detail.category.id,
-          isLoading: false
+      // 更新评论
+      updateComments(newComments) {
+        this.detail.comments_list.data.unshift(newComments);
+      },
+      // 切换评论页面
+      async changeCommentsPage(page) {
+        const res = await this.getCommentsList({
+          article_id: this.id,
+          page
         });
 
+        this.detail.comments_list = res.data.data;
       },
-      // 分类下取文章
-      async _getCategoryArticle(id) {
-        let res = await this.getCategoryArticle(id);
-
-        let arr = []
-        res.data.data.forEach(item => {
-          arr = item.articles.map(children => {
-            return children;
-          })
-        })
-
-        this.recommend = arr;
-      },
-      // 处理滚动条
-      handleScroll() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
-        let offsetTop = document.querySelector('#article-detail').offsetTop;
-        this.sidebarFixed = !!(scrollTop > offsetTop)
+      /**
+       * 获取文章详情
+       * @returns 文章详情
+       */
+      async getArticle() {
+        let res = await this.getArticleDetail(this.id);
+        this.detail = res.data.data;
+        document.title = this.detail.title;
       }
+
     }
   }
 </script>
@@ -150,40 +97,41 @@
 
 <style lang="scss" scoped>
   .container {
+    box-sizing: border-box;
     position: relative;
-    display: flex;
-    max-width: 1264px;
-    margin: 0 auto;
-    padding: 32px;
-    background: #fff;
+    width: 70%;
+    margin: 24px auto;
 
     & .content {
+      box-sizing: border-box;
+      padding: 32px;
       position: relative;
-      flex: 1;
-      margin-right: 32px;
-      animation: contentAnimation 0.36s 0.18s ease both;
+      width: 100%;
+      background: #fff;
+      border-radius: 8px;
 
       & .article-title {
-        font-size: 38px;
-        color: #464c5b;
+        font-size: 54px;
+        color: #404040;
       }
 
-      .article-info {
+      & .article-info {
         width: 100%;
-        margin: 32px 0;
-
-        & span {
+        & p {
           display: inline-block;
-          margin-right: 10px;
+          margin-right: 24px;
+          margin-top: 24px;
           font-size: 16px;
           color: #9ea7b4;
         }
 
-        & span.article-category,
-        & span.article-tag {
-          background: #e8eaec;
-          padding: 2px 16px;
-          border-radius: 4px;
+        & p.article-category {
+          height: 32px;
+          line-height: 32px;
+          padding: 0 32px;
+          font-size: 16px;
+          color: #409EFF;
+          border-radius: 32px;
           background: rgba(51, 119, 255, .1);
         }
       }
@@ -192,238 +140,40 @@
         font-size: 20px;
         color: #657180;
         line-height: 48px;
-      }
-    }
-
-    @keyframes contentAnimation {
-      0% {
-        opacity: 0;
-        top: 64px;
-        filter: alpha(opacity=0);
-      }
-
-      25% {
-        opacity: 0.25;
-        filter: alpha(opacity=25);
-      }
-      50% {
-        opacity: 0.5;
-        filter: alpha(opacity=50);
-      }
-      75% {
-        opacity: 0.75;
-        filter: alpha(opacity=75);
-      }
-
-      100% {
-        opacity: 1;
-        filter: alpha(opacity=100);
-        top: 0;
-      }
-    }
-
-    & .margin-right-300 {
-      margin-right: 316px;
-    }
-
-    & .sidebar {
-      box-sizing: border-box;
-      width: 300px;
-      animation: rightAnimation 0.36s 0.18s ease both;
-
-      & .recommend {
-
-        & .recommend-title {
-          font-size: 24px;
-          padding-bottom: 16px;
-          color: #464c5b;
-          display: flex;
-          align-items: center;
-          border-bottom: 1px solid #e8eaec;
-
-          & img {
-            width: 24px;
-          }
-        }
-
-        & .recommend-inner {
-        }
-
-        & .recommend-item {
-          & h1 {
-            cursor: pointer;
-            padding: 0;
-            margin: 16px 0;
-            font-size: 18px;
-            color: #464c5b;
-            font-weight: 400;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-
-            &:hover {
-              color: #3399ff;
-              text-decoration: underline;
-            }
-          }
-        }
-      }
-    }
-
-    & .sidebar-fixed {
-      position: fixed;
-      margin-left: 964px;
-      top: 128px;
-    }
-
-    @keyframes rightAnimation {
-      0% {
-        opacity: 0;
-        filter: alpha(opacity=0);
-      }
-
-      25% {
-        opacity: 0.25;
-      }
-      50% {
-        opacity: 0.5;
-        filter: alpha(opacity=50);
-      }
-      75% {
-        opacity: 0.75;
-        filter: alpha(opacity=75);
-      }
-
-      100% {
-        opacity: 1;
-        filter: alpha(opacity=100);
+        margin-top: 32px;
       }
     }
   }
 
-  .article-comments {
-    margin: 32px 0 16px;
-    border-top: 1px solid #e8eaec;
-
-    & .comments-title {
-      padding: 16px 0;
-      color: #2d8cf0;
-      font-size: 32px;
-    }
-
-    & .comments-inner {
-      padding-left: 16px;
-    }
-
-    & .recommend-empty {
-      text-align: center;
-      padding: 32px 0;
-      font-size: 16px;
-      color: #989898;
-    }
-
-    & .user-info {
-      padding-bottom: 16px;
-
-      & .user-info-item {
-        font-size: 18px;
-        margin-bottom: 16px;
-        color: #464c5b;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        & label {
-          font-weight: 800;
-        }
-
-        & input {
-          width: 375px;
-          font-size: 18px;
-          padding: 5px 10px;
-          border-radius: 4px;
-          border: 1px solid #dcdee2;
-        }
-      }
-    }
-
-    & .comments-content {
-      & .comments-content-title {
-        padding-bottom: 16px;
-        font-size: 18px;
-        color: #464c5b;
-        font-weight: 800;
-      }
-
-      & textarea {
-        width: 600px;
-        font-size: 18px;
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid #dcdee2;
-      }
-    }
-
-    & .submit-comments {
-      cursor: pointer;
-      padding: 10px 20px;
-      border: none;
-      color: #fff;
-      border-radius: 4px;
-      margin-top: 16px;
-      font-size: 18px;
-      background-image: linear-gradient(to right, #5cadff 0, #2d8cf0 100%);
-      background-repeat: repeat-x;
-
-      &:hover {
-        background-image: linear-gradient(to right, #2d8cf0 0, #2b85e4 100%);
-        background-repeat: repeat-x;
-      }
-    }
-  }
-
-  @media screen and (min-width: 200px) and (max-width: 750px) {
+  @media screen and (min-width: 200px) and (max-width: 768px) {
     .container {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      max-width: 1264px;
-      margin: 0 auto;
-      background: #fff;
-
-      & .content {
-        margin-right: 0;
-      }
-
-      & .sidebar-fixed {
-        position: relative !important;
-        margin-left: 0 !important;
-        top: 0 !important;
-      }
-
-      & .sidebar {
-        display: none;
-      }
+      width: 100%;
+    }
+    .container .content .article-info p.article-created-at {
+      display: none;
     }
   }
 
 </style>
-<style>
-  .v-note-wrapper .v-note-panel {
-    box-shadow: none !important;
-  }
+<style lang="scss">
+  #article-detail {
+    & .v-note-wrapper .v-note-panel {
+      box-shadow: none !important;
+    }
 
-  .v-note-wrapper .v-note-panel .v-note-show .v-show-content, .v-note-wrapper .v-note-panel .v-note-show .v-show-content-html {
-    background: #fff !important;
-  }
+    & .v-note-wrapper .v-note-panel .v-note-show .v-show-content, .v-note-wrapper .v-note-panel .v-note-show .v-show-content-html {
+      background: #fff !important;
+    }
 
-  .v-note-wrapper .v-note-panel .v-note-edit.divarea-wrapper .content-input-wrapper {
-    padding: 0 !important;
-  }
+    & .v-note-wrapper .v-note-panel .v-note-edit.divarea-wrapper .content-input-wrapper {
+      padding: 0 !important;
+    }
 
-  .v-note-wrapper .v-note-panel .v-note-show .v-show-content, .v-note-wrapper .v-note-panel .v-note-show .v-show-content-html {
-    padding: 0 !important;
+    & .v-note-wrapper .v-note-panel .v-note-show .v-show-content, .v-note-wrapper .v-note-panel .v-note-show .v-show-content-html {
+      padding: 0 !important;
+    }
   }
 </style>
+
+
 

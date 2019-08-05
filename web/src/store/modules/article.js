@@ -11,8 +11,8 @@ const state = {
 
 const mutations = {
   // 设置文章列表
-  SET_ARTICLE_LIST(state, data) {
-    state.articleList = data
+  SET_ARTICLE_LIST(state, list) {
+    state.articleList = list
   },
   // 设置文章分页
   SET_PAGINATION(state, page) {
@@ -34,12 +34,11 @@ const actions = {
    * @returns {Promise<void>}
    */
   async getArticleList({state, commit}, params) {
-    let ret = await article.list(params);
+    let res = await article.list(params);
+    commit('SET_ARTICLE_LIST', res.data.data.data);
+    commit('SET_PAGINATION', res.data.data.meta);
 
-    commit('SET_ARTICLE_LIST', ret.data.data.data);
-
-    commit('SET_PAGINATION', ret.data.data.meta);
-    return ret.data.data;
+    return res;
   },
 
   /**
@@ -62,7 +61,8 @@ const actions = {
    */
   async searchArticle({state, commit}, params) {
     let ret = await article.search(params);
-    commit('SET_ARTICLE_LIST', ret.data.data.data);
+    commit('SET_ARTICLE_LIST', ret.data.data);
+
     return ret;
   }
 };

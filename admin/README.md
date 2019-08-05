@@ -1,4 +1,21 @@
-### 后端项目使用
-- 在根目录下进入admin项目：`cd admin`，
-- 安装包，执行: `npm install` 命令，
-- 启动服务: `npm run dev`; 浏览器打开：http://localhost:8081/ 即可以访问。
+# admin
+
+> A Vue.js project
+
+## Build Setup
+
+``` bash
+# install dependencies
+npm install
+
+# serve with hot reload at localhost:8080
+npm run dev
+
+# build for production with minification
+npm run build
+
+# build for production and view the bundle analyzer report
+npm run build --report
+```
+
+For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).

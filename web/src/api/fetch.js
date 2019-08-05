@@ -18,7 +18,6 @@ Util.ajax.interceptors.request.use(config => {
   }
 
   // 获取token
-  config.headers.common['Authorization'] = 'Bearer ' + Vue.ls.get("web-token");
   return config
 
 }, error => {
@@ -28,75 +27,48 @@ Util.ajax.interceptors.request.use(config => {
 
 Util.ajax.interceptors.response.use(response => {
 
-  /**
-   * 在这里做loading 关闭
-   */
-
-    // 如果后端有新的token则重新缓存
-  let newToken = response.headers['new-token'];
-
-  if (newToken) {
-    Vue.ls.set("web-token", newToken);
-  }
   // 关闭loading
   closeLoading()
 
   return response;
 
 }, error => {
-  let res = error.response;
-  let {code} = res.data;
 
-  switch (code) {
-    case 401:
-      // 处理401错误
-      alert("权限不足");
-      break;
+  if (error.response.status === 403) {
+    store.commit('user/SET_USER_INFO', null);
+    Vue.ls.remove('BOBLOG_FE_TOKEN');
 
-    case 404:
-      alert("404不存在");
-      break;
-
-    case 412:
-      alert(res.data.message)
-      break;
-
-    case 422:
-      let errors = "";
-      if (res.data.errors) {
-        let arr = [];
-        for (let key in res.data.errors) {
-          res.data.errors[key].forEach((item) => {
-            arr.push(item)
-          })
-        }
-        errors = arr.length > 0 ? arr.join('，') : arr;
-      }
-      alert(errors)
-      break;
-
-    case 500:
-      alert(res.data.message)
-      break;
-
-    default:
-      alert(res.data.message)
+    if (error.response.data.request !== 'GET /v1/user/info') {
+      store.commit('user/SHOW_USER_MANAGER_MODEL', true);
+    }
   }
+
+  let errMsg = error.response.data.msg;
+
+  Vue.prototype.$message({
+    message: errMsg,
+    type: 'error'
+  });
 
   // 关闭loading
   closeLoading()
-  return Promise.reject(res)
+  return Promise.reject(error)
 
 });
 
 export default {
   post(url, params = {}) {
-    let {isLoading = true} = params;
+    const {username} = params;
+    const {isLoading = true} = params;
+
     return Util.ajax({
       method: 'post',
       url: url,
       data: qs.stringify(params),
       timeout: 30000,
+      auth: {
+        username
+      },
       isLoading,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -105,11 +77,16 @@ export default {
   },
 
   get(url, params = {}) {
-    let {isLoading = true} = params;
+    const {username} = params;
+    const {isLoading = true} = params;
+
     return Util.ajax({
       method: 'get',
       url: url,
       params,
+      auth: {
+        username
+      },
       isLoading
     })
   },
