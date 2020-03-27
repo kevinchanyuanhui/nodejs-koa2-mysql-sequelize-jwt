@@ -23,6 +23,7 @@ const menus = [
         }
       ]
     },
+    // 分类
     {
       name: "分类管理",
       path: "category",
@@ -40,6 +41,7 @@ const menus = [
         }
       ]
     },
+    // 文章
     {
       name: "文章管理",
       path: "article",
@@ -57,6 +59,25 @@ const menus = [
         }
       ]
     },
+    // 广告
+    {
+      name: "广告管理",
+      path: "advertise",
+      icon: "ios-disc",
+      children: [
+        {
+          name: "广告列表",
+          path: "/advertise",
+          icon: "md-list"
+        },
+        {
+          name: "广告创建",
+          path: "/advertise/create",
+          icon: "md-add-circle"
+        }
+      ]
+    },
+    // 评论
     {
       name: "评论管理",
       path: "comments",

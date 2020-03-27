@@ -7,6 +7,12 @@
       <FormItem label="文章作者" prop="author">
         <Input v-model="formValidate.author" placeholder="文章作者"></Input>
       </FormItem>
+      <FormItem label="文章简介" prop="description">
+        <Input v-model="formValidate.description" placeholder="文章简介"></Input>
+      </FormItem>
+      <FormItem label="文章关键字" prop="keyword">
+        <Input v-model="formValidate.keyword" placeholder="文章简介"></Input>
+      </FormItem>
       <FormItem label="文章分类" v-if="categoryList.length > 0">
         <Select v-model="formValidate.category_id">
           <Option v-for="(item, index) in categoryList" :value="item.id" :key="index">{{item.name}}</Option>
@@ -65,7 +71,9 @@
           author: '',
           category_id: '',
           cover: '',
-          content: ''
+          content: '',
+          description: '',
+          keyword: ''
         },
         ruleValidate: {
           title: [
@@ -76,6 +84,12 @@
           ],
           cover: [
             {required: true, message: '文章封面不能为空', trigger: 'blur'}
+          ],
+          description: [
+            {required: true, message: '文章简介不能为空', trigger: 'blur'}
+          ],
+          keyword: [
+            {required: true, message: '文章关键字不能为空', trigger: 'blur'}
           ],
           content: [
             {required: true, message: '文章内容不能为空', trigger: 'blur'}
@@ -96,7 +110,7 @@
       }),
       // 上传图片成功
       uploadSuccess(response) {
-        const url = `http://cdn.boblog.com/${response.key}`;
+        const url = `https://cdn.boblog.com/${response.key}`;
         this.formValidate.cover = url;
         this.$Message.success('上传成功!');
       },
@@ -128,6 +142,8 @@
           this.formValidate.category_id = parseInt(article.category_id);
           this.formValidate.cover = article.cover;
           this.formValidate.content = article.content;
+          this.formValidate.description = article.description;
+          this.formValidate.keyword = article.description;
 
         } catch (e) {
 

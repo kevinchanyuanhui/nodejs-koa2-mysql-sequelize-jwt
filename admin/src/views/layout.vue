@@ -2,7 +2,7 @@
   <div class="layout">
     <Layout>
       <Sider ref="side1" hide-trigger collapsible :collapsed-width="80" v-model="isCollapsed" style="overflow-y: auto">
-        <div class="layout-logo-left" :style="isCollapsed ? 'font-size:12px': ''">boblog.com</div>
+        <div class="layout-logo-left" :style="isCollapsed ? 'font-size:12px': ''">博客后台管理系统</div>
         <Menu
           :accordion="true"
           width="auto"
@@ -38,15 +38,12 @@
           <Header :style="{padding: 0}" class="layout-header-bar">
             <Icon @click.native="collapsedSider" :class="rotateIcon" :style="{margin: '0 20px'}" type="md-menu"
                   size="24"></Icon>
-            <Button type="text" @click="$router.go(-1)">
-              <Icon type="ios-undo"/>
-              返回
-            </Button>
             <div style="float: right;margin-right: 20px" v-if="adminAuth">
-              <Dropdown transfer trigger="click" @on-click="exitAccount">
+              <Dropdown transfer trigger="hover" @on-click="exitAccount">
                 <a href="javascript:void(0)">
+                  <Avatar size="small" style="background-color: #2d8cf0" icon="ios-person" />
                   <span class="main-user-name">{{adminAuth.email}}</span>
-                  <Icon type="arrow-down-b"></Icon>
+                  <Icon type="ios-arrow-down"/>
                 </a>
                 <DropdownMenu slot="list">
                   <DropdownItem name="loginout" divided>退出登录</DropdownItem>
@@ -174,6 +171,7 @@
     font-size: 16px;
     text-align: center;
     line-height: 44px;
+    font-weight: bold;
   }
 
   .layout-icon {

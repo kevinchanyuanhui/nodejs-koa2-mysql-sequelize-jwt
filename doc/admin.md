@@ -1,6 +1,6 @@
 ## 接口前缀
 ```shell
-http://localhost:3000/v1
+http://localhost:3000/api/v1
 ```
 
 # 管理员
@@ -29,6 +29,7 @@ password2 | 确认密码 | 是
 ## 管理员登录
 ```
 POST    /admin/login
+```
 ```
 ### 参数说明
 参数 | 说明 | 是否必填

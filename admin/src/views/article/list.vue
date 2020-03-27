@@ -1,7 +1,9 @@
 <template>
   <section>
+    <Button type="primary" @click="toPathLink('/article/create')" icon="md-add" style="margin-bottom: 16px;">新增文章
+    </Button>
     <section v-if="list.length > 0">
-      <Table border :columns="columns" :data="list">
+      <Table :loading="loading" border :columns="columns" :data="list">
         <template slot-scope="{ row }" slot="name">
           <strong>{{ row.name }}</strong>
         </template>
@@ -12,7 +14,10 @@
       </Table>
 
       <section class="page">
-        <Page :total="page.total" :page-size="page.per_page" :current="page.current_page" show-total
+        <Page :total="page.total"
+              :page-size="page.per_page"
+              :current="page.current_page"
+              show-total
               @on-change="handlePage"></Page>
       </section>
 
@@ -28,6 +33,7 @@
     name: "list",
     data() {
       return {
+        loading: true,
         list: [],
         page: {},
         currentPage: 1,
@@ -39,14 +45,37 @@
             align: "center"
           },
           {
-            title: '文章标题',
-            key: 'title'
+            title: '文章封面',
+            width: 150,
+            align: 'center',
+            render: (h, params) => {
+              return h('img', {
+                attrs: {
+                  src: params.row.cover + '?imageView2/1/w/100/h/100'
+                },
+                style: {
+                  width: '80px',
+                  height: '80px',
+                  padding: '10px',
+                  'border-radius': '10px'
+                }
+              });
+            }
           },
           {
-            title: '评论次数',
+            title: '文章分类',
+            width: 100,
             align: 'center',
-            key: 'comments_nums',
-            width: 100
+            key: 'browse',
+            render: (h, params) => {
+              return h('div', [
+                h('span', params.row.category.name)
+              ]);
+            }
+          },
+          {
+            title: '文章标题',
+            key: 'title'
           },
           {
             title: '浏览次数',
@@ -55,28 +84,16 @@
             key: 'browse'
           },
           {
-            title: '分类ID',
-            width: 100,
-            align: 'center',
-            key: 'category_id'
-          },
-          {
-            title: '创建时间',
-            width: 150,
-            key: 'created_at',
-            align: "center"
-          },
-          {
-            title: 'Action',
+            title: '操作',
             slot: 'action',
-            width: 150,
+            width: 200,
             align: 'center'
           }
         ]
       }
     },
     created() {
-      this._getArticleList();
+      this.fetchData();
     },
     methods: {
       ...mapActions({
@@ -84,15 +101,15 @@
         destroyArticle: 'article/destroyArticle'
       }),
       // 获取文章
-      async _getArticleList() {
+      async fetchData() {
         // let {page, desc, category_id, keyword} = this.$route.query;
-
         const res = await this.getArticleList({
           page: this.currentPage
         });
 
         this.list = res.data.data.data;
         this.page = res.data.data.meta;
+        this.loading = false;
       },
       // 切换分页
       handlePage(page) {
@@ -102,13 +119,17 @@
           })
         });
         this.currentPage = page;
-        this._getArticleList();
+        this.fetchData();
       },
       // 更新
       update(id) {
         this.$router.push(`/article/update/${id}`);
       },
-      // 删除分类
+      // 路由跳转
+      toPathLink(path) {
+        this.$router.push(path)
+      },
+      // 删除文章
       destroy(id) {
         this.$Modal.confirm({
           title: '提示',
@@ -119,7 +140,7 @@
               await this.destroyArticle(id);
               this.$Message.success('删除成功');
 
-              this._getArticleList();
+              this.fetchData();
 
             } catch (e) {
               console.log(e)

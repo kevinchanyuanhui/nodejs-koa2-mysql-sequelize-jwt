@@ -30,8 +30,6 @@ const routers = [
         meta: {module: "/admin", group: "set", title: '管理员 - 列表'},
         component: (resolve) => require(['../views/admin/index.vue'], resolve),
       },
-
-
       //todo: 分类管理
       {
         path: 'category',
@@ -50,6 +48,25 @@ const routers = [
         name: 'category/update',
         meta: {edit: true, module: "/category", group: "category", title: '分类 - 更新'},
         component: (resolve) => require(['../views/category/update.vue'], resolve),
+      },
+      //todo: 广告管理
+      {
+        path: 'advertise',
+        name: 'advertise',
+        meta: {module: "/advertise", group: "advertise", title: '广告 - 列表'},
+        component: (resolve) => require(['../views/advertise/list.vue'], resolve),
+      },
+      {
+        path: 'advertise/create',
+        name: 'advertise/create',
+        meta: {module: "/advertise/create", group: "advertise", title: '广告 - 创建'},
+        component: (resolve) => require(['../views/advertise/create.vue'], resolve),
+      },
+      {
+        path: 'advertise/update/:id',
+        name: 'advertise/update',
+        meta: {edit: true, module: "/advertise", group: "advertise", title: '广告 - 更新'},
+        component: (resolve) => require(['../views/advertise/update.vue'], resolve),
       },
       //todo: 文章管理
       {
@@ -76,6 +93,13 @@ const routers = [
         name: 'comments',
         meta: {module: "/comments", group: "comments", title: '评论 - 列表'},
         component: (resolve) => require(['../views/comments/list.vue'], resolve),
+      },
+      //todo: 回复评论管理
+      {
+        path: 'reply/:comment_id',
+        name: 'reply',
+        meta: {module: "/comments", group: "comments", title: '回复评论 - 列表'},
+        component: (resolve) => require(['../views/reply/list.vue'], resolve),
       },
       {
         //todo: 404

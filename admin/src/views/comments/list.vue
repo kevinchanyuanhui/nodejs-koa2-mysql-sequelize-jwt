@@ -6,6 +6,7 @@
           <strong>{{ row.name }}</strong>
         </template>
         <template slot-scope="{ row, index }" slot="action">
+          <Button type="primary" size="small" @click="reply(row.id)" style="margin-right: 5px">回复列表</Button>
           <Button type="error" size="small" @click="destroy(row.id)">删除</Button>
         </template>
       </Table>
@@ -50,15 +51,20 @@
             key: 'content'
           },
           {
-            title: '所属文章',
-            key: 'article_id',
+            title: '评论类型',
+            key: 'target_type',
             width: 100,
-            align: "center"
+            align: "center",
+            render: (h, params) => {
+              return h('div', [
+                h('span', params.row.target_type === 'article' ? '普通文章' : '专栏')
+              ]);
+            }
           },
           {
             title: 'Action',
             slot: 'action',
-            width: 150,
+            width: 200,
             align: 'center'
           }
         ]
@@ -69,13 +75,11 @@
     },
     methods: {
       ...mapActions({
-        getCommentsList: 'comments/getCommentsList',
-        destroyComments: 'comments/destroyComments'
+        getCommentsList: 'comment/getCommentsList',
+        destroyComments: 'comment/destroyComments'
       }),
       // 获取分类
       async _getCommentsList() {
-        // const {page, desc} = this.$route.query;
-
         const res = await this.getCommentsList({
           page: this.currentPage
         });
@@ -92,6 +96,9 @@
         });
         this.currentPage = page;
         this._getCommentsList();
+      },
+      reply(id) {
+        this.$router.push('/reply/' + id)
       },
       // 删除分类
       destroy(id) {
